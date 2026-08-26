@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -9,6 +10,13 @@ from schemas import ShortenRequest, ShortenResponse, StatsResponse
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="URL Shortener")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/shorten", response_model=ShortenResponse, status_code=201)
