@@ -1,0 +1,25 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+
+# Local SQLite database
+*.db
+
+# Version control
+.git/
+.gitignore
+
+# Editor / OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# Docker
+Dockerfile
+.dockerignore
