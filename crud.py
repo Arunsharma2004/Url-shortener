@@ -31,7 +31,10 @@ def get_link_by_code(db: Session, short_code: str) -> Link | None:
 
 
 def increment_click_count(db: Session, link: Link) -> Link:
-    link.click_count += 1
+    db.query(Link).filter(Link.id == link.id).update(
+        {Link.click_count: Link.click_count + 1},
+        synchronize_session=False,
+    )
     db.commit()
     db.refresh(link)
     return link
