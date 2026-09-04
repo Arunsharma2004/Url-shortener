@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import crud
 import main
 from database import Base, get_db
 
@@ -60,6 +61,40 @@ def test_shorten_invalid_url_returns_422(client):
     resp = client.post("/shorten", json={"original_url": "not-a-valid-url"})
 
     assert resp.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "javascript:alert(1)",
+        "file:///etc/passwd",
+        "ftp://example.com/file",
+        "data:text/html,<script>alert(1)</script>",
+    ],
+)
+def test_shorten_rejects_non_http_scheme(client, url):
+    resp = client.post("/shorten", json={"original_url": url})
+
+    assert resp.status_code == 422
+
+
+def test_shorten_accepts_plain_http_url(client):
+    resp = client.post("/shorten", json={"original_url": "http://example.com"})
+
+    assert resp.status_code == 201
+
+
+def test_create_link_retries_on_short_code_collision(client, monkeypatch):
+    taken = make_short_code(client)
+    codes = iter([taken, "fresh1"])
+    monkeypatch.setattr(
+        crud, "generate_unique_short_code", lambda db: next(codes)
+    )
+
+    resp = client.post("/shorten", json={"original_url": ORIGINAL_URL})
+
+    assert resp.status_code == 201
+    assert resp.json()["short_code"] == "fresh1"
 
 
 def test_redirect_returns_307_to_original_url(client):

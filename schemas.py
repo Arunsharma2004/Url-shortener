@@ -1,4 +1,4 @@
-from pydantic import AnyUrl, BaseModel, field_validator
+from pydantic import BaseModel, HttpUrl, field_validator
 
 
 class ShortenRequest(BaseModel):
@@ -8,9 +8,9 @@ class ShortenRequest(BaseModel):
     @classmethod
     def validate_url(cls, v: str) -> str:
         try:
-            AnyUrl(v)
+            HttpUrl(v)
         except Exception as exc:
-            raise ValueError("original_url must be a valid absolute URL") from exc
+            raise ValueError("original_url must be a valid http or https URL") from exc
         return v
 
 
