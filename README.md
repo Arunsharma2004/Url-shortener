@@ -65,8 +65,8 @@ Response `201 Created`:
 }
 ```
 
-- `422 Unprocessable Entity` if `original_url` is missing or not a valid
-  absolute URL.
+- `422 Unprocessable Entity` if `original_url` is missing, malformed, or
+  uses a scheme other than `http`/`https`.
 - `429 Too Many Requests` if you exceed 5 requests/minute from one IP.
 
 ### `GET /{short_code}`

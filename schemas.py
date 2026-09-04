@@ -7,6 +7,10 @@ class ShortenRequest(BaseModel):
     @field_validator("original_url")
     @classmethod
     def validate_url(cls, v: str) -> str:
+        """Reject any URL that isn't http/https. Returns the original string
+        unchanged (not the parsed URL) so the redirect target is stored
+        exactly as submitted.
+        """
         try:
             HttpUrl(v)
         except Exception as exc:

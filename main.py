@@ -46,6 +46,11 @@ def get_stats(short_code: str, db: Session = Depends(get_db)):
 
 @app.get("/{short_code}")
 def redirect_to_original(short_code: str, db: Session = Depends(get_db)):
+    """Redirect to the stored URL and increment its click_count.
+
+    Uses 307 rather than 301/302 so browsers and proxies don't cache the
+    redirect, which would let click_count silently undercount.
+    """
     link = crud.get_link_by_code(db, short_code)
     if link is None:
         raise HTTPException(status_code=404, detail="Short code not found")
