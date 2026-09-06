@@ -59,3 +59,12 @@ Items surfaced in review and consciously left unaddressed for now:
   schema nor the `Link.original_url` column caps length, so a very large
   string could be submitted and stored. A sane upper bound (e.g. a few
   thousand characters) would prevent abuse.
+
+## Linting
+
+`ruff` is configured via `pyproject.toml`, which ignores rule `B008`
+("do not perform function call `Depends` in argument defaults").
+FastAPI's dependency injection relies on calling `Depends()` in argument
+defaults - that's the framework's standard, correct pattern, not a bug,
+so this rule is disabled project-wide rather than suppressed line by
+line.

@@ -1,0 +1,4 @@
+[tool.ruff.lint]
+# B008: FastAPI's dependency injection relies on calling Depends() in argument
+# defaults - that's the framework's standard, correct pattern, not a bug.
+ignore = ["B008"]
