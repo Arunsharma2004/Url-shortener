@@ -45,7 +45,12 @@ Items surfaced in review and consciously left unaddressed for now:
   `busy_timeout` (or `timeout` connect arg), so concurrent writers under
   heavy load can hit "database is locked" errors instead of waiting for
   the lock. Acceptable at current scale; revisit if write contention
-  shows up.
+  shows up. This is made worse by the redirect route: `GET /{short_code}`
+  performs a SQLite write (the `click_count` UPDATE) on *every* visit, so
+  a single popular link under heavy but entirely legitimate traffic can
+  produce enough write contention to surface "database is locked". A
+  busy timeout, WAL mode, or batching/deferring the count update would
+  all help.
 - **Duplicated 404 lookup.** The "look up by `short_code`, raise 404 if
   missing" block is repeated in `get_stats` and `redirect_to_original`
   in `main.py`. Small enough (a few lines) that extracting a shared
@@ -67,6 +72,45 @@ Items surfaced in review and consciously left unaddressed for now:
   does **not** resolve DNS, so a public hostname whose A/AAAA record
   points at an internal address (DNS rebinding) is not caught. Doing so
   would mean network I/O inside request validation; deferred.
+- **Rate limiter storage is in-memory and per-process.** `slowapi` is
+  configured with the default in-memory backend keyed on
+  `get_remote_address`. Behind a reverse proxy or load balancer every
+  request appears to originate from the proxy's IP, so the `5/minute`
+  limit on `/shorten` collapses into a single shared bucket for all
+  clients; with multiple app processes each also keeps its own separate
+  counter. A shared store (e.g. Redis) plus honoring a trusted
+  `X-Forwarded-For` would be needed for the limit to mean anything in a
+  real deployment.
+- **Retry exhaustion raises a bare `RuntimeError`.** When
+  `crud.create_link` fails `_MAX_CREATE_RETRIES` times it raises
+  `RuntimeError`, which surfaces to the client as an opaque 500. It
+  should raise a 503 (retryable) via `HTTPException`. Separately,
+  `generate_unique_short_code` loops `while True` with no attempt cap, so
+  if the code space were ever near-exhausted it would spin instead of
+  giving up; it should bound its attempts and let the caller translate
+  that into a 503 as well.
+- **`click_count` increments on `HEAD` requests.** FastAPI serves `HEAD`
+  for the `GET /{short_code}` route, and the handler increments the count
+  before returning. Link-preview/unfurl bots (Slack, Discord, iMessage,
+  etc.) issue `HEAD` (and sometimes `GET`) requests, inflating the count
+  with non-human traffic — which undercuts the redirect-accuracy goal the
+  307 status was chosen to protect. Skipping the increment for `HEAD`,
+  and/or filtering known bot user-agents, would help.
+- **`short_url` is built from the request `Host` header.** `shorten_url`
+  constructs the returned short link from `request.base_url`, which is
+  derived from the client-supplied `Host` header. An attacker can send a
+  spoofed `Host` and get back a short URL on a domain they chose (useful
+  for phishing, since the stored redirect is still legitimate). Building
+  the URL from a configured base URL / allowed-hosts list would fix this.
+- **Tests do touch `url_shortener.db` at import time.** The README claims
+  the suite "never touches `url_shortener.db`". That's true for the
+  request flows (they use an in-memory DB via a dependency override), but
+  `test_main.py` imports `main`, and `main.py` runs
+  `Base.metadata.create_all(bind=engine)` at module import against the
+  real SQLite file — so importing the app (in tests or anywhere) creates
+  `url_shortener.db` and its `links` table as a side effect. Moving
+  `create_all` into a startup hook (or guarding it) would make the claim
+  accurate.
 
 ## Linting
 
