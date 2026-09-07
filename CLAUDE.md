@@ -59,6 +59,14 @@ Items surfaced in review and consciously left unaddressed for now:
   schema nor the `Link.original_url` column caps length, so a very large
   string could be submitted and stored. A sane upper bound (e.g. a few
   thousand characters) would prevent abuse.
+- **URL validator does not resolve hostnames.** `ShortenRequest`'s
+  validator rejects non-http(s) schemes, URLs carrying userinfo
+  (`trusted.com@evil.com`), and URLs whose host is an IP literal in a
+  loopback / private / link-local / reserved range (incl. the
+  169.254.169.254 cloud-metadata endpoint) or the name `localhost`. It
+  does **not** resolve DNS, so a public hostname whose A/AAAA record
+  points at an internal address (DNS rebinding) is not caught. Doing so
+  would mean network I/O inside request validation; deferred.
 
 ## Linting
 

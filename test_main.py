@@ -84,6 +84,46 @@ def test_shorten_accepts_plain_http_url(client):
     assert resp.status_code == 201
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://127.0.0.1/admin",
+        "http://127.0.0.1:8000/",
+        "http://localhost/x",
+        "http://LOCALHOST/x",
+        "https://sub.localhost/x",
+        "http://10.0.0.5/",
+        "http://192.168.1.1/",
+        "http://172.16.0.1/",
+        "http://169.254.169.254/latest/meta-data/",
+        "http://[::1]/",
+        "http://[fe80::1]/",
+        "http://0.0.0.0/",
+        "http://2130706433/",  # decimal-encoded 127.0.0.1
+        "http://trusted.com@evil.com/",  # userinfo trick
+        "http://user:pass@10.0.0.5/",
+    ],
+)
+def test_shorten_rejects_internal_or_userinfo_urls(client, url):
+    resp = client.post("/shorten", json={"original_url": url})
+
+    assert resp.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/some/long/path",
+        "http://8.8.8.8/",  # public IP literal
+        "https://example.com/a@b",  # @ in path, not userinfo
+    ],
+)
+def test_shorten_accepts_public_urls(client, url):
+    resp = client.post("/shorten", json={"original_url": url})
+
+    assert resp.status_code == 201
+
+
 def test_create_link_retries_on_short_code_collision(client, monkeypatch):
     taken = make_short_code(client)
     codes = iter([taken, "fresh1"])

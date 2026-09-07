@@ -65,8 +65,11 @@ Response `201 Created`:
 }
 ```
 
-- `422 Unprocessable Entity` if `original_url` is missing, malformed, or
-  uses a scheme other than `http`/`https`.
+- `422 Unprocessable Entity` if `original_url` is missing, malformed,
+  uses a scheme other than `http`/`https`, contains userinfo
+  (`user@host`), or points at a loopback / private / link-local / other
+  internal address (including the `169.254.169.254` cloud-metadata
+  endpoint) or `localhost`.
 - `429 Too Many Requests` if you exceed 5 requests/minute from one IP.
 
 ### `GET /{short_code}`
