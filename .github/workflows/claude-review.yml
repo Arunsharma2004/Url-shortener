@@ -1,0 +1,29 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Review the changes in this pull request. Focus on correctness
+            bugs, security issues, and meaningful simplification or
+            efficiency opportunities in the diff. Post your findings as a
+            single comment on the pull request.
+          claude_args: |
+            --allowed-tools "Bash(git diff:*),Bash(git log:*)"
