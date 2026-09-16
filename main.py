@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 import crud
 from database import Base, engine, get_db
 from schemas import ShortenRequest, ShortenResponse, StatsResponse
-# Testing the automated Claude Code review workflow
 
+# Testing the automated Claude Code review workflow
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="URL Shortener")
