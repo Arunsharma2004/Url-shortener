@@ -1,9 +1,10 @@
 import ipaddress
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 _BLOCKED_HOSTNAMES = {"localhost"}
+_MAX_URL_LENGTH = 2048
 
 
 def _points_at_internal_ip(host: str) -> bool:
@@ -29,7 +30,7 @@ def _points_at_internal_ip(host: str) -> bool:
 
 
 class ShortenRequest(BaseModel):
-    original_url: str
+    original_url: str = Field(max_length=_MAX_URL_LENGTH)
 
     @field_validator("original_url")
     @classmethod
