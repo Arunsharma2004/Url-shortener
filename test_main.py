@@ -189,6 +189,12 @@ def test_shorten_original_url_wrong_type_returns_422(client):
     assert resp.status_code == 422
 
 
+def test_shorten_url_exceeding_max_length_returns_422(client):
+    long_url = "https://example.com/" + "a" * 2048
+    resp = client.post("/shorten", json={"original_url": long_url})
+    assert resp.status_code == 422
+
+
 # --- short-code generation ---
 
 
